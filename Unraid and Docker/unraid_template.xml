@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<Container version="2">
+
+  <!-- Basic Info -->
+  <Name>FTPSync</Name>
+  <Repository>ghcr.io/your-username/ftp-sync:latest</Repository>
+  <Registry></Registry>
+  <Network>bridge</Network>
+  <MyIP></MyIP>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support></Support>
+  <Project></Project>
+  <Overview>
+    FTP Remote-to-Local Sync v1.1.2. Monitors a remote FTP server and downloads
+    new or changed files to your Unraid shares automatically. Tracks every
+    downloaded file by SHA256 fingerprint so nothing is ever downloaded twice.
+    Features a full web-based FTP Browser with upload, download, rename, delete,
+    folder downloads, and multi-server profile support. Incomplete or cancelled
+    downloads are automatically cleaned up — no partial files left behind.
+    Manage everything from the web UI at the address shown below.
+  </Overview>
+  <Category>Tools: Backup:</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <TemplateURL></TemplateURL>
+  <Icon>https://raw.githubusercontent.com/your-username/ftp-sync/main/icon.png</Icon>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <PostArgs></PostArgs>
+  <CPUset></CPUset>
+  <DateInstalled></DateInstalled>
+  <DonateText></DonateText>
+  <DonateLink></DonateLink>
+  <Requires></Requires>
+
+  <!-- Web UI Port -->
+  <Config
+    Name="Web UI Port"
+    Target="8080"
+    Default="8080"
+    Mode="tcp"
+    Description="Port to access the FTP Sync web interface."
+    Type="Port"
+    Display="always"
+    Required="true"
+    Mask="false">8080</Config>
+
+  <!-- Download Destination -->
+  <Config
+    Name="Download Folder"
+    Target="/downloads"
+    Default="/mnt/user/Downloads/FTPSync"
+    Mode="rw"
+    Description="Where synced and browser-downloaded files are saved on your Unraid server."
+    Type="Path"
+    Display="always"
+    Required="true"
+    Mask="false">/mnt/user/Downloads/FTPSync</Config>
+
+  <!-- Config + History Storage -->
+  <Config
+    Name="Config and History Storage"
+    Target="/data"
+    Default="/mnt/user/appdata/ftpsync"
+    Mode="rw"
+    Description="Stores settings, download history database, server profiles, and saved sessions."
+    Type="Path"
+    Display="always"
+    Required="true"
+    Mask="false">/mnt/user/appdata/ftpsync</Config>
+
+  <!-- Env: Config file path -->
+  <Config
+    Name="Config File Path"
+    Target="FTP_CONFIG_FILE"
+    Default="/data/config.json"
+    Mode=""
+    Description="Path inside the container where settings are saved. Do not change unless you know what you are doing."
+    Type="Variable"
+    Display="advanced"
+    Required="true"
+    Mask="false">/data/config.json</Config>
+
+  <!-- Env: DB file path -->
+  <Config
+    Name="History Database Path"
+    Target="FTP_DB_FILE"
+    Default="/data/history.db"
+    Mode=""
+    Description="Path inside the container where the download history database is stored."
+    Type="Variable"
+    Display="advanced"
+    Required="true"
+    Mask="false">/data/history.db</Config>
+
+  <!-- Env: PUID -->
+  <Config
+    Name="PUID"
+    Target="PUID"
+    Default="99"
+    Mode=""
+    Description="User ID that downloaded files will be owned by. Use 99 for nobody (Unraid default)."
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">99</Config>
+
+  <!-- Env: PGID -->
+  <Config
+    Name="PGID"
+    Target="PGID"
+    Default="100"
+    Mode=""
+    Description="Group ID that downloaded files will be owned by. Use 100 for users (Unraid default)."
+    Type="Variable"
+    Display="always"
+    Required="false"
+    Mask="false">100</Config>
+
+  <!-- Env: Verbose logging -->
+  <Config
+    Name="Verbose Logging"
+    Target="FTP_VERBOSE"
+    Default="false"
+    Mode=""
+    Description="Set to true to enable detailed debug logging. Only needed for troubleshooting."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">false</Config>
+
+  <!-- Env: Disable auto browser open -->
+  <Config
+    Name="Disable Auto Browser Open"
+    Target="FTP_NO_BROWSER"
+    Default="1"
+    Mode=""
+    Description="Set to 1 to prevent the container from trying to open a browser on startup (recommended for headless Unraid)."
+    Type="Variable"
+    Display="advanced"
+    Required="false"
+    Mask="false">1</Config>
+
+</Container>

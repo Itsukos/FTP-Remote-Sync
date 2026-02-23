@@ -1,0 +1,102 @@
+version: "3.9"
+
+# ============================================================
+#  docker-compose.yml — FTP Sync v1.0.0
+#  Vibe Coded by Itsuko | https://twitter.com/Itsukos
+#
+#  HOW TO ADD FOLDERS THE APP CAN DOWNLOAD INTO
+#  ─────────────────────────────────────────────
+#  Add a line under "volumes:" for every folder you want
+#  the app to be able to write to.
+#
+#  Format:
+#    - "/real/path/on/your/server:/path/inside/the/app"
+#
+#  LEFT side  = the actual folder on your machine / NAS
+#  RIGHT side = what you type into the app as the Local Path
+#
+#  Linux / NAS examples:
+#    - "/home/user/media/tv:/mnt/tv"
+#    - "/srv/downloads:/mnt/downloads"
+#    - "/mnt/storage/anime:/mnt/anime"
+#
+#  Unraid examples:
+#    - "/mnt/user/Media/TV:/mnt/tv"
+#    - "/mnt/user/Downloads:/mnt/downloads"
+#
+#  Windows Docker Desktop examples:
+#    - "D:/Media/TV:/mnt/tv"
+#    - "E:/Downloads:/mnt/downloads"
+#
+#  After editing, just run:  docker compose up -d
+#  (no rebuild needed, just restarts with the new mounts)
+#
+#  Then in the app (Folder Pairs tab) use the RIGHT-side path
+#  as the Local Path, e.g. /mnt/tv
+#
+# ──────────────────────────────────────────────────────────
+#  RUNNING AS NON-ROOT (PUID / PGID)
+#  ─────────────────────────────────
+#  The container runs as a non-root user for security.
+#  Set PUID and PGID to match the user that owns your
+#  download folders on the host so file permissions work.
+#
+#  Find your UID/GID on Linux/Mac:   id
+#  Unraid default:  PUID=99  PGID=100  (nobody:users)
+#  Most Linux:      PUID=1000 PGID=1000
+#  Synology:        PUID=1026 PGID=101  (typically)
+#
+#  If downloaded files have wrong ownership, adjust these.
+# ============================================================
+
+services:
+  ftp-sync:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: ftp-sync
+
+    ports:
+      # Change the LEFT number to use a different port on your machine.
+      # E.g. "9090:8080" means you open http://YOUR-IP:9090
+      - "8080:8080"
+
+    environment:
+      - FTP_CONFIG_FILE=/data/config.json
+      - FTP_DB_FILE=/data/history.db
+      - FTP_NO_BROWSER=true
+      - FTP_VERBOSE=false
+      # ── Set these to match the user that owns your download folders ──
+      # Run "id" in your terminal to find your UID and GID.
+      # Unraid users: use PUID=99 and PGID=100
+      - PUID=1000
+      - PGID=1000
+
+    volumes:
+      # Required — stores your settings and download history.
+      - ftp-sync-data:/data
+
+      # Mounts the compose file into the container so the web UI
+      # can edit volume mounts from the Settings tab.
+      - "./docker-compose.yml:/app/docker-compose.yml"
+
+      # ── ADD YOUR DOWNLOAD FOLDERS BELOW THIS LINE ──────────
+      # Uncomment and edit, or add your own.
+      # Left side = real path on your machine
+      # Right side = what the app calls it (use this in Folder Pairs)
+      #
+      # - "/home/user/media/tv:/mnt/tv"
+      # - "/home/user/media/movies:/mnt/movies"
+      # - "/home/user/downloads:/mnt/downloads"
+      # - "/srv/media/anime:/mnt/anime"
+      #
+      # Unraid:
+      # - "/mnt/user/Media/TV:/mnt/tv"
+      # - "/mnt/user/Downloads:/mnt/downloads"
+
+    restart: unless-stopped
+
+volumes:
+  ftp-sync-data:
+    driver: local
