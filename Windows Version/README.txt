@@ -1,4 +1,4 @@
-FTP Sync v1.0.0 — Windows Edition
+FTP Sync v1.1.2 — Windows Edition
 ===================================
 Vibe Coded by Itsuko  |  DM bugs: https://twitter.com/Itsukos
 
