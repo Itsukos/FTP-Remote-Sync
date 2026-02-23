@@ -121,7 +121,3 @@ for discoverability. Drag images into the GitHub editor to upload.*
 Python · Flask · Tkinter · tkinterdnd2 · cryptography · pystray · PyInstaller
 
 ---
-
-## License
-
-MIT
