@@ -1,4 +1,4 @@
-FTP Sync v1.0.0 — Docker / Unraid Edition
+FTP Sync v1.1.2 — Docker / Unraid Edition
 ==========================================
 Vibe Coded by Itsuko  |  DM bugs: https://twitter.com/Itsukos
 
