@@ -99,23 +99,6 @@ See the included `unraid_setup.txt` for the full Unraid guide.
 
 ---
 
-## Screenshots
-
-*Add screenshots here once you have them — they make a huge difference
-for discoverability. Drag images into the GitHub editor to upload.*
-
----
-
-## Tested With
-
-- Whatbox (FTPS, proftpd, Japanese filenames)
-- Generic vsftpd (plain FTP and FTPS)
-- Unraid 6.x / 7.x
-- Windows 10 / 11
-- Docker Desktop (Windows and Mac)
-
----
-
 ## Built With
 
 Python · Flask · Tkinter · tkinterdnd2 · cryptography · pystray · PyInstaller
