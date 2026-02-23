@@ -1,0 +1,263 @@
+FTP Sync v1.1.2 — Unraid Setup Guide
+======================================
+Written for people who are new to Docker on Unraid.
+Follow these steps in order — you'll be running in about 10 minutes.
+
+
+====================================================
+ BEFORE YOU START — one-time Unraid setup
+====================================================
+
+1. Make sure Docker is enabled.
+   Settings > Docker > Enable Docker = Yes > Apply
+
+2. Make sure Community Applications is installed.
+   Click the Apps tab. If it's missing, go to:
+   Plugins > Install Plugin > paste this URL and click Install:
+   https://raw.githubusercontent.com/Squidly271/community.applications/master/plugins/community.applications.plg
+
+
+====================================================
+ CHOOSE YOUR INSTALL METHOD
+====================================================
+
+  METHOD A — Build on Unraid directly (easiest, no accounts needed)
+  METHOD B — Docker Hub image (easier to update, needs a free account)
+
+Both work exactly the same once running.
+
+
+====================================================
+ METHOD A — Build directly on Unraid  <- RECOMMENDED
+====================================================
+
+STEP 1 — Copy the source files to your Unraid server.
+
+  From Windows: open File Explorer and type in the address bar:
+    \\YOUR-UNRAID-IP\appdata\
+  Create a folder called  ftpsync-build  and copy these four files into it:
+    ftp_core.py
+    ftp_web.py
+    Dockerfile
+    requirements.txt
+
+  From a Mac or Linux terminal:
+    scp ftp_core.py ftp_web.py Dockerfile requirements.txt \
+        root@YOUR-UNRAID-IP:/mnt/user/appdata/ftpsync-build/
+
+STEP 2 — Open the Unraid terminal.
+  Click the terminal icon in the top-right corner (looks like >_ )
+  or go to Tools > Terminal.
+
+STEP 3 — Build the image and start the container.
+
+  Copy and paste the block below. Edit the -v lines to point at your
+  actual Unraid shares. Add or remove -v lines as needed — one per
+  folder you want the app to be able to write files into.
+
+    cd /mnt/user/appdata/ftpsync-build
+    docker build -t ftp-sync:latest .
+
+    docker run -d \
+      --name ftp-sync \
+      --restart=unless-stopped \
+      -p 8080:8080 \
+      -e PUID=99 \
+      -e PGID=100 \
+      -v /mnt/user/appdata/ftpsync:/data \
+      -v /mnt/user/Media/TV:/mnt/tv \
+      -v /mnt/user/Media/Anime:/mnt/anime \
+      -v /mnt/user/Downloads:/mnt/downloads \
+      ftp-sync:latest
+
+  PUID=99 / PGID=100 is "nobody:users" — the standard non-root user on
+  Unraid. Downloaded files will be owned by nobody:users, matching most
+  other Unraid containers. See FILE OWNERSHIP below if you need a
+  different user.
+
+  ABOUT THE -v LINES:
+    The first one (-v .../appdata/ftpsync:/data) is required.
+    It stores your settings and history — do not remove it.
+
+    The rest are your download folders. Each one maps a real Unraid
+    share (left side) to a name the app uses (right side):
+
+      -v /mnt/user/Media/TV:/mnt/tv
+
+    means the app can write to /mnt/tv, which is actually
+    /mnt/user/Media/TV on your Unraid server.
+
+    Add as many as you need. In the app's Folder Pairs tab, use the
+    right-side path (/mnt/tv, /mnt/anime, etc.) as the Local Path.
+
+STEP 4 — Open the app.
+
+  http://YOUR-UNRAID-IP:8080
+
+  Your Unraid IP is shown at the top of the Unraid dashboard.
+
+STEP 5 — Configure sync.
+
+  1. Dashboard tab: enter FTP Host, Port, Username, Password
+     then check Save and click Save Credentials
+
+  2. Folder Pairs tab: click Add
+     Remote Path: the folder on your FTP server  (e.g. /home/user/shows)
+     Local Path:  the right-side path you chose   (e.g. /mnt/tv)
+     then click Add
+
+  3. Dashboard tab: click Start Sync
+
+Done. The app checks your FTP server on schedule and downloads new files
+automatically. It restarts automatically when Unraid reboots.
+
+
+====================================================
+ ADDING MORE FOLDERS LATER (Method A)
+====================================================
+
+You need to stop and recreate the container with the new -v line.
+Your settings and history are safe — they live in the /data volume.
+
+  docker stop ftp-sync
+  docker rm ftp-sync
+
+Then re-run the docker run command from Step 3 with your new -v line
+added. All settings will still be there.
+
+Alternatively use the Unraid Docker tab:
+  Click the ftp-sync container icon > Edit > Add another Path
+  Fill in the host path and container path > Apply
+
+
+====================================================
+ UPDATING (Method A)
+====================================================
+
+  1. Copy the new ftp_core.py and ftp_web.py into ftpsync-build/
+  2. In the Unraid terminal:
+
+       cd /mnt/user/appdata/ftpsync-build
+       docker build -t ftp-sync:latest .
+       docker stop ftp-sync && docker rm ftp-sync
+
+  3. Re-run the docker run command from Step 3 above.
+
+Settings and history are untouched — they live in the /data volume.
+
+
+====================================================
+ METHOD B — Docker Hub image
+====================================================
+
+This method requires a free Docker Hub account and Docker Desktop
+on your Windows or Mac build machine.
+
+STEP 1 — Create a Docker Hub account at https://hub.docker.com
+
+STEP 2 — Install Docker Desktop.
+  https://www.docker.com/products/docker-desktop/
+
+STEP 3 — Open a terminal in the folder with the FTP Sync files and run:
+
+    docker login ghcr.io
+    docker build -t ghcr.io/itsukos/ftp-remote-sync:latest .
+    docker push ghcr.io/itsukos/ftp-remote-sync:latest
+
+  This pushes to GitHub Container Registry (ghcr.io) using your
+  existing GitHub account — no separate Docker Hub account needed.
+
+STEP 4 — The unraid_template.xml already points to:
+    <Repository>ghcr.io/itsukos/ftp-remote-sync:latest</Repository>
+  No changes needed.
+
+STEP 5 — Import the template into Unraid.
+  In the Unraid terminal:
+    cp /path/to/unraid_template.xml \
+       /boot/config/plugins/dockerMan/templates-user/ftpsync.xml
+
+  Then in the Unraid Docker tab: Add Container > choose FTPSync from
+  the dropdown.
+
+STEP 6 — Fill in the template form:
+  - Web UI Port: 8080 (or any free port)
+  - Download Folder: your first Unraid share (e.g. /mnt/user/Media/TV)
+    Container path: /mnt/tv  (this is what you type in Folder Pairs)
+  - Config and History Storage: /mnt/user/appdata/ftpsync
+  - PUID: 99   PGID: 100  (Unraid defaults)
+  - Click Add another Path to add more folders
+  - Click Apply
+
+STEP 7 — Open http://YOUR-UNRAID-IP:8080 and configure as in
+  Step 5 of Method A above.
+
+UPDATING (Method B):
+  Replace ftp_core.py and ftp_web.py with the new versions, then:
+
+    docker build -t ghcr.io/itsukos/ftp-remote-sync:latest .
+    docker push ghcr.io/itsukos/ftp-remote-sync:latest
+
+  In the Unraid Docker tab, click the container icon > Update.
+
+
+====================================================
+ FILE OWNERSHIP (PUID / PGID)
+====================================================
+
+The container always runs as a non-root user. By default on Unraid
+this is PUID=99 / PGID=100 (nobody:users), the same as most other
+Unraid containers.
+
+This means:
+  - The app never runs as root
+  - Downloaded files are owned by nobody:users (99:100)
+  - Your shares need to allow writes from that user or group
+
+If you get "permission denied" errors when downloading:
+  1. Check share permissions in Unraid (Shares tab)
+     Make sure nobody or users has write access
+  2. Or change PUID/PGID in the docker run command to match a user
+     that already has access, then recreate the container
+
+To find the UID and GID of any user on Unraid:   id USERNAME
+
+
+====================================================
+ WHAT PATHS TO USE IN THE APP
+====================================================
+
+The Local Path you type into Folder Pairs must be the RIGHT side of
+your -v volume mapping — the path inside the container, not the real
+Unraid path.
+
+  You mapped:   -v /mnt/user/Media/TV:/mnt/tv
+  Type in app:  /mnt/tv
+
+The Settings tab has a "Folder Mounts" section showing exactly which
+paths are mounted and available inside the container.
+
+
+====================================================
+ COMMON ISSUES
+====================================================
+
+"No such file or directory" when a download starts
+  The local path in Folder Pairs is not mounted into the container.
+  Check Settings > Folder Mounts in the web UI.
+  Add the correct -v line and recreate the container.
+
+"Site can't be reached"
+  Check the container is running in the Unraid Docker tab (green dot).
+  Use the Unraid server IP — not localhost — if accessing from another device.
+
+Container shows as stopped immediately after starting
+  Unraid Docker tab > click the container > Logs
+  Usually a bad path in a volume mount or a port already in use.
+
+Files downloading again after they already downloaded
+  Normal if the remote file changed (different size or timestamp).
+  To skip a specific file permanently: add it to the Ignore List in the app.
+
+Files downloaded with wrong owner
+  Set PUID and PGID to match the user that owns your download folders.
+  Run "id" on Unraid to find the right values, then recreate the container.
